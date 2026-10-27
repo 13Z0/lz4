@@ -1,0 +1,56 @@
+# TEMPORARY (test branch only, not to be merged) :
+# modern MSYS2 / MinGW64 toolchains, to check Makefile warnings and the JCC erratum option
+name: MSYS2 test
+on: push
+
+permissions:
+  contents: read
+
+jobs:
+  msys2:
+    name: MSYS2 ${{ matrix.sys }} ${{ matrix.cc }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sys: mingw64, cc: gcc }
+          - { sys: mingw64, cc: clang }
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.sys }}
+        update: true
+        install: make git
+        pacboy: gcc:p clang:p
+
+    - name: Versions
+      run: |
+        ${{ matrix.cc }} --version | head -1
+        as --version | head -1
+        make --version | head -1
+        uname -a
+        echo "OS=$OS"
+
+    - name: Build dev (as bench_jcc.sh does)
+      run: |
+        make -C programs clean
+        make -C programs lz4 V=1 CC=${{ matrix.cc }}
+        make -C lib lib V=1 CC=${{ matrix.cc }}
+        make -C tests fullbench V=1 CC=${{ matrix.cc }}
+
+    - name: Build v1.10.0 (as bench_jcc.sh does)
+      run: |
+        git worktree add ../v110 v1.10.0
+        make -C ../v110/programs clean
+        make -C ../v110/programs lz4 V=1 CC=${{ matrix.cc }}
+
+    - name: Run
+      run: ./programs/lz4.exe -b1 -i1 programs/lz4.exe

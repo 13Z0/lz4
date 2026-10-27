@@ -13,7 +13,7 @@ rmdir /S /Q "!BIN!" 2>nul
 echo msbuild "%sln%" /p:Configuration=!Configuration! /p:Platform=!Platform!
 msbuild "%sln%"                          ^
         /nologo                          ^
-        /v:minimal                       ^
+        /v:normal                        ^
         /m                               ^
         /p:Configuration=!Configuration! ^
         /p:Platform=!Platform!           ^
